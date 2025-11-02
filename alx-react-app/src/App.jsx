@@ -12,8 +12,10 @@ function App() {
   const [count, setCount] = useState(0)
 
   return (
+    
     <>
      <WelcomeMessage />
+     <UserProfile name="Alice" age="25" bio="Loves hiking and photography" />
      
      <Header />
      
