@@ -9,6 +9,8 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 
+import UserContext from '../context/UserContext';
+
 import ProfilePage from './ProfilePage';
 
 function App() {
