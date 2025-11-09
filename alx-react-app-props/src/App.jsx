@@ -19,6 +19,8 @@ import Contact from './components/Contact'
 import Counter from './components/Counter'
 import './App.css'
 
+import { UserProvider } from './context/UserContext'
+
 function App() {
   return (
     <UserProvider>
