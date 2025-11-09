@@ -1,80 +1,42 @@
-import { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext } from 'react'
 
-// Create the context
-const UserContext = createContext();
+const UserContext = createContext()
 
-// Custom hook for using the context
 export const useUser = () => {
-  const context = useContext(UserContext);
+  const context = useContext(UserContext)
   if (!context) {
-    throw new Error('useUser must be used within a UserProvider');
+    throw new Error('useUser must be used within a UserProvider')
   }
-  return context;
-};
+  return context
+}
 
-// Provider component
 export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-  // Login function
-  const login = async (email, password) => {
-    setLoading(true);
-    try {
-      // Simulate API call
-      const userData = {
-        id: 1,
-        name: 'John Doe',
-        email: email,
-        role: 'user',
-        avatar: 'https://via.placeholder.com/150',
-        isLoggedIn: true
-      };
-      setUser(userData);
-      return { success: true, user: userData };
-    } catch (error) {
-      return { success: false, error: error.message };
-    } finally {
-      setLoading(false);
-    }
-  };
+  const login = (userData) => {
+    setUser(userData)
+    setIsLoggedIn(true)
+  }
 
-  // Logout function
   const logout = () => {
-    setUser(null);
-  };
-
-  // Update user profile
-  const updateProfile = (updatedData) => {
-    setUser(prevUser => ({
-      ...prevUser,
-      ...updatedData
-    }));
-  };
-
-  // Check if user is authenticated
-  const isAuthenticated = !!user;
-
-  // Check if user has specific role
-  const hasRole = (role) => {
-    return user?.role === role;
-  };
+    setUser(null)
+    setIsLoggedIn(false)
+  }
 
   const value = {
     user,
-    loading,
+    isLoggedIn,
     login,
     logout,
-    updateProfile,
-    isAuthenticated,
-    hasRole
-  };
+    setUser
+  }
 
   return (
     <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
-  );
-};
+  )
+}
 
-export default UserContext;
+export default UserContext
