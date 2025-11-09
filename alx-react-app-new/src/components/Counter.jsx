@@ -1,15 +1,15 @@
-import { useState } from "react";
+
 import React, { useState } from 'react';
 
 const Counter = () => {
   const [count, setCount] = useState(0);
 
-  const increment = () => {
-    setCount(count + 1);
+  const increase = () => {
+    setCount(prevCount => prevCount + 1);
   };
 
-  const decrement = () => {
-    setCount(count - 1);
+  const decrease = () => {
+    setCount(prevCount => prevCount - 1);
   };
 
   const reset = () => {
@@ -17,17 +17,17 @@ const Counter = () => {
   };
 
   return (
-    <div style={{ textAlign: 'center', padding: '20px' }}>
-      <h2>Counter: {count}</h2>
-      <div>
-        <button onClick={decrement} style={{ margin: '0 5px' }}>
-          -
+    <div className="counter">
+      <h2>Current Value: {count}</h2>
+      <div className="counter-buttons">
+        <button onClick={increase} className="btn btn-add">
+          +
         </button>
-        <button onClick={reset} style={{ margin: '0 5px' }}>
+        <button onClick={reset} className="btn btn-reset">
           Reset
         </button>
-        <button onClick={increment} style={{ margin: '0 5px' }}>
-          +
+        <button onClick={decrease} className="btn btn-subtract">
+          -
         </button>
       </div>
     </div>
@@ -35,4 +35,3 @@ const Counter = () => {
 };
 
 export default Counter;
-useState
