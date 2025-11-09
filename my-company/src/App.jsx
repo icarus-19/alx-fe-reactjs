@@ -3,6 +3,34 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import './App.css';
+
+// Import page components
+import Home from './components/Home';
+import About from './components/About';
+import ProfilePage from './components/ProfilePage';
+import Contact from './components/Contact';
+import Services from './components/Services';
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/services" element={<Services />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+
+
 function App() {
   const [count, setCount] = useState(0)
 
