@@ -1,6 +1,5 @@
-React.createContext()
 
-return (
+React.createContext(
     <div>
       <p>Name: {userData.name}</p>
       <p>Email: {userData.email}</p>
