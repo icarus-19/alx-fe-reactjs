@@ -19,6 +19,20 @@ function App() {
   return <ProfilePage userData={userData} />;
 }
 
+import UserProvider from './components/UserProvider';
+import ProfilePage from './components/ProfilePage';
+
+function App() {
+  return (
+    <UserProvider>
+      <div className="App">
+        <ProfilePage />
+      </div>
+    </UserProvider>
+  );
+}
+
+
 
 
 
