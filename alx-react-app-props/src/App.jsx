@@ -9,6 +9,35 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 
+
+import { Routes, Route } from 'react-router-dom'
+import { UserProvider } from './context/UserContext'
+import Navbar from './components/Navbar'
+import Home from './components/Home'
+import About from './components/About'
+import Contact from './components/Contact'
+import Counter from './components/Counter'
+import './App.css'
+
+function App() {
+  return (
+    <UserProvider>
+      <div className="App">
+        <Navbar />
+        <main>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+          </Routes>
+          <Counter />
+        </main>
+      </div>
+    </UserProvider>
+  )
+}
+
+
 import UserContext from '../context/UserContext';
 
 import ProfilePage from './ProfilePage';
