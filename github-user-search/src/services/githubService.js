@@ -1,4 +1,44 @@
-import api from './api';
+import axios from 'axios';
+
+// Create axios instance specifically for GitHub API
+const githubApi = axios.create({
+  baseURL: 'https://api.github.com',
+  timeout: 15000,
+  headers: {
+    'Accept': 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor
+githubApi.interceptors.request.use(
+  (config) => {
+    // Add authentication token if available (optional, increases rate limit)
+    const token = process.env.REACT_APP_GITHUB_TOKEN;
+    if (token) {
+      config.headers.Authorization = `token ${token}`;
+    }
+    
+    console.log(`🚀 Making GitHub API request to: ${config.url}`);
+    return config;
+  },
+  (error) => {
+    console.error('❌ GitHub API request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor
+githubApi.interceptors.response.use(
+  (response) => {
+    console.log(`✅ GitHub API response received: ${response.status}`);
+    return response;
+  },
+  (error) => {
+    console.error('❌ GitHub API response error:', error.response?.status, error.message);
+    return Promise.reject(error);
+  }
+);
 
 export const githubService = {
   /**
@@ -17,8 +57,8 @@ export const githubService = {
       
       console.log(`🔍 Fetching GitHub data for user: ${cleanUsername}`);
       
-      // Make API call to GitHub users endpoint
-      const response = await api.get(`https://api.github.com/users/${cleanUsername}`);
+      // Make API call to GitHub users endpoint using Axios
+      const response = await githubApi.get(`/users/${cleanUsername}`);
       
       console.log('✅ GitHub API response received:', response.data.login);
       
@@ -67,7 +107,7 @@ export const githubService = {
    */
   fetchUserRepos: async (username) => {
     try {
-      const response = await api.get(`https://api.github.com/users/${username}/repos`, {
+      const response = await githubApi.get(`/users/${username}/repos`, {
         params: {
           sort: 'updated',
           per_page: 10,
@@ -87,7 +127,7 @@ export const githubService = {
    */
   fetchUserFollowers: async (username) => {
     try {
-      const response = await api.get(`https://api.github.com/users/${username}/followers`, {
+      const response = await githubApi.get(`/users/${username}/followers`, {
         params: {
           per_page: 20
         }
@@ -135,7 +175,7 @@ export const githubService = {
    */
   searchUsers: async (query) => {
     try {
-      const response = await api.get(`https://api.github.com/search/users`, {
+      const response = await githubApi.get(`/search/users`, {
         params: {
           q: query,
           per_page: 10
@@ -225,7 +265,7 @@ export const githubUtils = {
    */
   checkRateLimit: async () => {
     try {
-      const response = await api.get('https://api.github.com/rate_limit');
+      const response = await githubApi.get('/rate_limit');
       return response.data;
     } catch (error) {
       console.warn('Unable to check rate limit:', error.message);
