@@ -22,3 +22,4 @@ export const userService = {
   // Get user albums
   getUserAlbums: (userId) => api.get(`/users/${userId}/albums`),
 };
+
