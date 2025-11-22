@@ -94,7 +94,7 @@ const Search = ({ onSearch, loading = false, userData = null, error = null }) =>
           <div>
             <h3 style={errorTitleStyle}>Search Failed</h3>
             <p style={errorMessageStyle}>{error}</p>
-            <p style={helpTextStyle}>Looks like we cant find the user. Please check the username and try again.</p>
+            <p style={helpTextStyle}>Looks like we can't find the user. Please check the username and try again.</p>
           </div>
         </div>
       )}
