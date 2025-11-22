@@ -94,7 +94,7 @@ const Search = ({ onSearch, loading = false, userData = null, error = null }) =>
           <div>
             <h3 style={errorTitleStyle}>Search Failed</h3>
             <p style={errorMessageStyle}>{error}</p>
-            <p style={helpTextStyle}>Looks like we can't find the user. Please check the username and try again.</p>
+            <p style={helpTextStyle}>Looks like we cant find the user. Please check the username and try again.</p>
           </div>
         </div>
       )}
@@ -233,10 +233,6 @@ const inputStyle = {
   fontSize: '1rem',
   transition: 'all 0.2s ease',
   outline: 'none',
-  ':focus': {
-    borderColor: '#3182ce',
-    boxShadow: '0 0 0 3px rgba(49, 130, 206, 0.1)'
-  }
 };
 
 const disabledInputStyle = {
@@ -276,25 +272,16 @@ const buttonStyle = {
 const primaryButtonStyle = {
   backgroundColor: '#3182ce',
   color: 'white',
-  ':hover': {
-    backgroundColor: '#2c5aa0'
-  }
 };
 
 const secondaryButtonStyle = {
   backgroundColor: '#e2e8f0',
   color: '#4a5568',
-  ':hover': {
-    backgroundColor: '#d2dce8'
-  }
 };
 
 const disabledButtonStyle = {
   opacity: 0.5,
   cursor: 'not-allowed',
-  ':hover': {
-    backgroundColor: 'inherit'
-  }
 };
 
 const loadingContentStyle = {
@@ -429,9 +416,6 @@ const linkStyle = {
   color: '#3182ce',
   textDecoration: 'none',
   fontWeight: '600',
-  ':hover': {
-    textDecoration: 'underline'
-  }
 };
 
 const helpSectionStyle = {
@@ -462,10 +446,6 @@ const exampleUserButtonStyle = {
   fontSize: '0.8rem',
   cursor: 'pointer',
   transition: 'all 0.2s ease',
-  ':hover': {
-    backgroundColor: '#edf2f7',
-    borderColor: '#a0aec0'
-  }
 };
 
 // Add CSS animation
