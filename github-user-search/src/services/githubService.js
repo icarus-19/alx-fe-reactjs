@@ -52,22 +52,16 @@ export const githubService = {
         throw new Error('Username cannot be empty');
       }
 
-      // Clean the username
       const cleanUsername = username.trim();
-      
       console.log(`🔍 Fetching GitHub data for user: ${cleanUsername}`);
       
-      // Make API call to GitHub users endpoint using Axios
       const response = await githubApi.get(`/users/${cleanUsername}`);
-      
       console.log('✅ GitHub API response received:', response.data.login);
       
       return response.data;
       
     } catch (error) {
-      // Handle different types of errors
       if (error.response) {
-        // GitHub API returned an error response
         const status = error.response.status;
         const message = error.response.data?.message || 'Unknown error';
         
@@ -83,20 +77,154 @@ export const githubService = {
             throw new Error('Authentication failed. Please check your access token.');
           case 422:
             throw new Error('Invalid username format.');
-          case 500:
-          case 502:
-          case 503:
-            throw new Error('GitHub API is currently unavailable. Please try again later.');
           default:
             throw new Error(`GitHub API error: ${status} - ${message}`);
         }
       } else if (error.request) {
-        // Request was made but no response received
         throw new Error('Network error: Unable to reach GitHub API. Check your internet connection.');
       } else {
-        // Something else happened
         throw new Error(`Unexpected error: ${error.message}`);
       }
+    }
+  },
+
+  /**
+   * Search GitHub users with advanced criteria
+   * @param {Object} criteria - Search criteria
+   * @param {string} criteria.username - Username to search for
+   * @param {string} criteria.location - Location filter
+   * @param {number} criteria.minRepos - Minimum repositories
+   * @param {string} criteria.language - Programming language
+   * @returns {Promise} Search results
+   */
+  searchUsers: async (criteria = {}) => {
+    try {
+      const { username, location, minRepos, language } = criteria;
+      
+      // Build search query
+      let query = '';
+      const queryParts = [];
+      
+      if (username) {
+        queryParts.push(`${username} in:login`);
+      }
+      if (location) {
+        queryParts.push(`location:${location}`);
+      }
+      if (minRepos) {
+        queryParts.push(`repos:>=${minRepos}`);
+      }
+      if (language) {
+        queryParts.push(`language:${language}`);
+      }
+      
+      // If no specific criteria, fall back to a general search
+      if (queryParts.length === 0) {
+        query = 'followers:>0';
+      } else {
+        query = queryParts.join(' ');
+      }
+      
+      console.log(`🔍 Searching GitHub users with query: ${query}`);
+      
+      const response = await githubApi.get('https://api.github.com/search/users', {
+        params: {
+          q: query,
+          per_page: 10,
+          sort: 'followers',
+          order: 'desc'
+        }
+      });
+      
+      console.log(`✅ Found ${response.data.items.length} users`);
+      return response.data;
+      
+    } catch (error) {
+      if (error.response) {
+        const status = error.response.status;
+        const message = error.response.data?.message || 'Unknown error';
+        
+        switch (status) {
+          case 403:
+            if (message.includes('rate limit')) {
+              throw new Error('GitHub API rate limit exceeded. Please try again in a few minutes.');
+            }
+            throw new Error('Access forbidden for search.');
+          case 422:
+            throw new Error('Invalid search criteria.');
+          default:
+            throw new Error(`GitHub search error: ${status} - ${message}`);
+        }
+      } else if (error.request) {
+        throw new Error('Network error: Unable to reach GitHub API.');
+      } else {
+        throw new Error(`Search failed: ${error.message}`);
+      }
+    }
+  },
+
+  /**
+   * Advanced search with multiple users and filtering
+   * @param {Object} criteria - Search criteria
+   * @returns {Promise} Filtered user data
+   */
+  advancedSearch: async (criteria = {}) => {
+    try {
+      const { username, location, minRepos, language } = criteria;
+      
+      // If we have a specific username, fetch that user directly
+      if (username && !location && !minRepos && !language) {
+        const userData = await githubService.fetchUserData(username);
+        return {
+          total_count: 1,
+          incomplete_results: false,
+          items: [{
+            login: userData.login,
+            id: userData.id,
+            avatar_url: userData.avatar_url,
+            url: userData.url,
+            html_url: userData.html_url,
+            repos: userData.public_repos,
+            location: userData.location,
+            matches_criteria: true
+          }]
+        };
+      }
+      
+      // Otherwise, use the search API
+      const searchResults = await githubService.searchUsers(criteria);
+      
+      // Enhance results with additional user data
+      const enhancedResults = await Promise.all(
+        searchResults.items.slice(0, 5).map(async (user) => {
+          try {
+            const userDetails = await githubService.fetchUserData(user.login);
+            return {
+              ...user,
+              public_repos: userDetails.public_repos,
+              followers: userDetails.followers,
+              following: userDetails.following,
+              location: userDetails.location,
+              bio: userDetails.bio,
+              company: userDetails.company,
+              blog: userDetails.blog,
+              created_at: userDetails.created_at,
+              updated_at: userDetails.updated_at
+            };
+          } catch (error) {
+            console.warn(`Could not fetch details for user ${user.login}:`, error.message);
+            return user;
+          }
+        })
+      );
+      
+      return {
+        ...searchResults,
+        items: enhancedResults
+      };
+      
+    } catch (error) {
+      throw new Error(`Advanced search failed: ${error.message}`);
     }
   },
 
@@ -166,30 +294,55 @@ export const githubService = {
     } catch (error) {
       throw new Error(`Failed to fetch complete profile: ${error.message}`);
     }
-  },
-
-  /**
-   * Search for users (alternative to direct user fetch)
-   * @param {string} query - Search query
-   * @returns {Promise} Search results
-   */
-  searchUsers: async (query) => {
-    try {
-      const response = await githubApi.get(`/search/users`, {
-        params: {
-          q: query,
-          per_page: 10
-        }
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(`User search failed: ${error.response?.data?.message || error.message}`);
-    }
   }
 };
 
 // Utility functions
 export const githubUtils = {
+  /**
+   * Build GitHub search query from criteria
+   * @param {Object} criteria - Search criteria
+   * @returns {string} GitHub search query
+   */
+  buildSearchQuery: (criteria = {}) => {
+    const { username, location, minRepos, language } = criteria;
+    const queryParts = [];
+    
+    if (username) queryParts.push(`${username} in:login`);
+    if (location) queryParts.push(`location:"${location}"`);
+    if (minRepos) queryParts.push(`repos:>=${minRepos}`);
+    if (language) queryParts.push(`language:${language}`);
+    
+    return queryParts.length > 0 ? queryParts.join(' ') : 'followers:>0';
+  },
+
+  /**
+   * Validate search criteria
+   * @param {Object} criteria - Search criteria
+   * @returns {Object} Validation result
+   */
+  validateSearchCriteria: (criteria = {}) => {
+    const errors = [];
+    const { username, location, minRepos, language } = criteria;
+    
+    if (!username && !location && !minRepos && !language) {
+      errors.push('At least one search criteria is required');
+    }
+    
+    if (minRepos && (isNaN(minRepos) || minRepos < 0)) {
+      errors.push('Minimum repositories must be a positive number');
+    }
+    
+    if (username && username.length > 39) {
+      errors.push('Username must be less than 39 characters');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  },
+
   /**
    * Format user data for display
    * @param {Object} userData - Raw user data from GitHub API
@@ -206,7 +359,6 @@ export const githubUtils = {
       blog: userData.blog || null,
       twitter: userData.twitter_username || null,
       email: userData.email || null,
-      hireable: userData.hireable || false,
       stats: {
         publicRepos: userData.public_repos,
         publicGists: userData.public_gists,
@@ -216,46 +368,7 @@ export const githubUtils = {
       dates: {
         joined: new Date(userData.created_at).toLocaleDateString(),
         updated: new Date(userData.updated_at).toLocaleDateString()
-      },
-      links: {
-        github: userData.html_url,
-        followers: userData.followers_url,
-        following: userData.following_url,
-        gists: userData.gists_url,
-        starred: userData.starred_url,
-        subscriptions: userData.subscriptions_url,
-        organizations: userData.organizations_url,
-        repos: userData.repos_url,
-        events: userData.events_url
       }
-    };
-  },
-
-  /**
-   * Validate GitHub username format
-   * @param {string} username - GitHub username to validate
-   * @returns {Object} Validation result
-   */
-  validateUsername: (username) => {
-    const errors = [];
-    
-    if (!username || username.trim() === '') {
-      errors.push('Username cannot be empty');
-    }
-    
-    if (username.length > 39) {
-      errors.push('Username must be less than 39 characters');
-    }
-    
-    // GitHub username regex pattern
-    const githubUsernamePattern = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/;
-    if (!githubUsernamePattern.test(username)) {
-      errors.push('Username can only contain alphanumeric characters and hyphens, cannot start or end with a hyphen, and cannot have consecutive hyphens');
-    }
-    
-    return {
-      isValid: errors.length === 0,
-      errors: errors
     };
   },
 
