@@ -1,22 +1,48 @@
 import React, { useState } from 'react';
+import { githubService } from '../services/githubService';
 
 const Search = ({ onSearch, loading = false, userData = null, error = null }) => {
   const [username, setUsername] = useState('');
+  const [internalLoading, setInternalLoading] = useState(false);
+  const [internalUserData, setInternalUserData] = useState(null);
+  const [internalError, setInternalError] = useState('');
 
   const handleInputChange = (e) => {
     setUsername(e.target.value);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (username.trim()) {
-      onSearch(username.trim());
+      setInternalLoading(true);
+      setInternalError('');
+      setInternalUserData(null);
+      
+      try {
+        // Using fetchUserData directly
+        const data = await githubService.fetchUserData(username.trim());
+        setInternalUserData(data);
+        
+        if (onSearch) {
+          onSearch(username.trim());
+        }
+      } catch (err) {
+        setInternalError(err.message);
+      } finally {
+        setInternalLoading(false);
+      }
     }
   };
 
   const handleClear = () => {
     setUsername('');
+    setInternalUserData(null);
+    setInternalError('');
   };
+
+  const displayLoading = loading || internalLoading;
+  const displayUserData = userData || internalUserData;
+  const displayError = error || internalError;
 
   return (
     <div style={containerStyle}>
@@ -32,10 +58,10 @@ const Search = ({ onSearch, loading = false, userData = null, error = null }) =>
               value={username}
               onChange={handleInputChange}
               placeholder="Enter GitHub username (e.g., octocat)"
-              disabled={loading}
+              disabled={displayLoading}
               style={{
                 ...inputStyle,
-                ...(loading ? disabledInputStyle : {})
+                ...(displayLoading ? disabledInputStyle : {})
               }}
             />
             <span style={searchIconStyle}>
@@ -48,11 +74,11 @@ const Search = ({ onSearch, loading = false, userData = null, error = null }) =>
           <button
             type="button"
             onClick={handleClear}
-            disabled={loading || !username}
+            disabled={displayLoading || !username}
             style={{
               ...buttonStyle,
               ...secondaryButtonStyle,
-              ...((loading || !username) ? disabledButtonStyle : {})
+              ...((displayLoading || !username) ? disabledButtonStyle : {})
             }}
           >
             Clear
@@ -60,14 +86,14 @@ const Search = ({ onSearch, loading = false, userData = null, error = null }) =>
           
           <button
             type="submit"
-            disabled={loading || !username.trim()}
+            disabled={displayLoading || !username.trim()}
             style={{
               ...buttonStyle,
               ...primaryButtonStyle,
-              ...((loading || !username.trim()) ? disabledButtonStyle : {})
+              ...((displayLoading || !username.trim()) ? disabledButtonStyle : {})
             }}
           >
-            {loading ? (
+            {displayLoading ? (
               <span style={loadingContentStyle}>
                 <LoadingSpinner />
                 Searching...
@@ -80,7 +106,7 @@ const Search = ({ onSearch, loading = false, userData = null, error = null }) =>
       </form>
 
       {/* Loading State */}
-      {loading && (
+      {displayLoading && (
         <div style={loadingContainerStyle}>
           <LoadingSpinner size="large" />
           <p style={loadingTextStyle}>Searching for user...</p>
@@ -88,61 +114,61 @@ const Search = ({ onSearch, loading = false, userData = null, error = null }) =>
       )}
 
       {/* Error State */}
-      {error && !loading && (
+      {displayError && !displayLoading && (
         <div style={errorContainerStyle}>
           <div style={errorIconStyle}>❌</div>
           <div>
             <h3 style={errorTitleStyle}>Search Failed</h3>
-            <p style={errorMessageStyle}>{error}</p>
+            <p style={errorMessageStyle}>{displayError}</p>
             <p style={helpTextStyle}>Looks like we cant find the user. Please check the username and try again.</p>
           </div>
         </div>
       )}
 
       {/* User Data Display */}
-      {userData && !loading && !error && (
+      {displayUserData && !displayLoading && !displayError && (
         <div style={userCardStyle}>
           <div style={userHeaderStyle}>
             <img 
-              src={userData.avatar_url} 
-              alt={userData.login}
+              src={displayUserData.avatar_url} 
+              alt={displayUserData.login}
               style={avatarStyle}
             />
             <div style={userInfoStyle}>
               <h2 style={userNameStyle}>
-                {userData.name || userData.login}
+                {displayUserData.name || displayUserData.login}
               </h2>
-              <p style={userLoginStyle}>@{userData.login}</p>
-              {userData.bio && (
-                <p style={userBioStyle}>{userData.bio}</p>
+              <p style={userLoginStyle}>@{displayUserData.login}</p>
+              {displayUserData.bio && (
+                <p style={userBioStyle}>{displayUserData.bio}</p>
               )}
             </div>
           </div>
 
           <div style={userStatsStyle}>
             <div style={statItemStyle}>
-              <strong>{userData.public_repos}</strong>
+              <strong>{displayUserData.public_repos}</strong>
               <span>Repositories</span>
             </div>
             <div style={statItemStyle}>
-              <strong>{userData.followers}</strong>
+              <strong>{displayUserData.followers}</strong>
               <span>Followers</span>
             </div>
             <div style={statItemStyle}>
-              <strong>{userData.following}</strong>
+              <strong>{displayUserData.following}</strong>
               <span>Following</span>
             </div>
           </div>
 
-          {userData.location && (
+          {displayUserData.location && (
             <div style={userMetaStyle}>
-              <span>📍 {userData.location}</span>
+              <span>📍 {displayUserData.location}</span>
             </div>
           )}
 
           <div style={profileLinkStyle}>
             <a 
-              href={userData.html_url} 
+              href={displayUserData.html_url} 
               target="_blank" 
               rel="noopener noreferrer"
               style={linkStyle}
