@@ -3,40 +3,108 @@ import { githubService } from '../services/githubService';
 
 const Search = ({ onSearch, loading = false, userData = null, error = null }) => {
   const [username, setUsername] = useState('');
+  const [location, setLocation] = useState('');
+  const [minRepos, setMinRepos] = useState('');
+  const [language, setLanguage] = useState('');
+  const [searchType, setSearchType] = useState('user'); // 'user' or 'advanced'
   const [internalLoading, setInternalLoading] = useState(false);
   const [internalUserData, setInternalUserData] = useState(null);
   const [internalError, setInternalError] = useState('');
 
-  const handleInputChange = (e) => {
-    setUsername(e.target.value);
+  const handleInputChange = (field, value) => {
+    switch (field) {
+      case 'username':
+        setUsername(value);
+        break;
+      case 'location':
+        setLocation(value);
+        break;
+      case 'minRepos':
+        setMinRepos(value);
+        break;
+      case 'language':
+        setLanguage(value);
+        break;
+      default:
+        break;
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (username.trim()) {
-      setInternalLoading(true);
-      setInternalError('');
-      setInternalUserData(null);
+    
+    if (searchType === 'user' && !username.trim()) {
+      setInternalError('Username is required for basic search');
+      return;
+    }
+
+    if (searchType === 'advanced' && !username.trim() && !location.trim()) {
+      setInternalError('At least one search criteria is required for advanced search');
+      return;
+    }
+
+    setInternalLoading(true);
+    setInternalError('');
+    setInternalUserData(null);
+
+    try {
+      let searchData = {};
       
-      try {
-        // Using fetchUserData directly
+      if (searchType === 'user') {
+        // Basic user search
         const data = await githubService.fetchUserData(username.trim());
         setInternalUserData(data);
+        searchData = { username: username.trim(), data };
+      } else {
+        // Advanced search - in a real app, you'd call a different endpoint
+        const data = await githubService.fetchUserData(username.trim());
         
-        if (onSearch) {
-          onSearch(username.trim());
-        }
-      } catch (err) {
-        setInternalError(err.message);
-      } finally {
-        setInternalLoading(false);
+        // Filter results based on advanced criteria (client-side filtering for demo)
+        const filteredData = filterUserByCriteria(data, { location, minRepos, language });
+        setInternalUserData(filteredData);
+        searchData = { 
+          username: username.trim(), 
+          location, 
+          minRepos, 
+          language, 
+          data: filteredData 
+        };
       }
+      
+      if (onSearch) {
+        onSearch(searchData);
+      }
+    } catch (err) {
+      setInternalError(err.message);
+    } finally {
+      setInternalLoading(false);
     }
+  };
+
+  const filterUserByCriteria = (userData, criteria) => {
+    // Client-side filtering for demo purposes
+    // In a real app, this would be done server-side with GitHub's search API
+    const meetsCriteria = {
+      location: !criteria.location || 
+                (userData.location && userData.location.toLowerCase().includes(criteria.location.toLowerCase())),
+      minRepos: !criteria.minRepos || userData.public_repos >= parseInt(criteria.minRepos),
+      language: true // Language filtering would require additional API calls
+    };
+
+    return Object.values(meetsCriteria).every(Boolean) ? userData : null;
   };
 
   const handleClear = () => {
     setUsername('');
+    setLocation('');
+    setMinRepos('');
+    setLanguage('');
     setInternalUserData(null);
+    setInternalError('');
+  };
+
+  const handleSearchTypeToggle = () => {
+    setSearchType(prev => prev === 'user' ? 'advanced' : 'user');
     setInternalError('');
   };
 
@@ -45,61 +113,165 @@ const Search = ({ onSearch, loading = false, userData = null, error = null }) =>
   const displayError = error || internalError;
 
   return (
-    <div style={containerStyle}>
-      <form onSubmit={handleSubmit} style={formStyle}>
-        <div style={inputGroupStyle}>
-          <label htmlFor="github-username" style={labelStyle}>
-            GitHub Username
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">GitHub User Search</h1>
+        <p className="text-gray-600">Find GitHub users with advanced filtering options</p>
+      </div>
+
+      {/* Search Type Toggle */}
+      <div className="flex justify-center">
+        <div className="bg-gray-100 rounded-lg p-1 inline-flex">
+          <button
+            type="button"
+            onClick={() => handleSearchTypeToggle()}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              searchType === 'user'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            🔍 Basic Search
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSearchTypeToggle()}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              searchType === 'advanced'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            ⚡ Advanced Search
+          </button>
+        </div>
+      </div>
+
+      {/* Search Form */}
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg p-6 space-y-6">
+        {/* Username Field */}
+        <div className="space-y-2">
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+            GitHub Username *
           </label>
-          <div style={inputContainerStyle}>
+          <div className="relative">
             <input
-              id="github-username"
+              id="username"
               type="text"
               value={username}
-              onChange={handleInputChange}
+              onChange={(e) => handleInputChange('username', e.target.value)}
               placeholder="Enter GitHub username (e.g., octocat)"
               disabled={displayLoading}
-              style={{
-                ...inputStyle,
-                ...(displayLoading ? disabledInputStyle : {})
-              }}
+              className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 transition-colors"
+              required
             />
-            <span style={searchIconStyle}>
-              🔍
-            </span>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+              <span className="text-gray-400">👤</span>
+            </div>
           </div>
         </div>
 
-        <div style={buttonGroupStyle}>
+        {/* Advanced Search Fields */}
+        {searchType === 'advanced' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="space-y-2">
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                Location
+              </label>
+              <div className="relative">
+                <input
+                  id="location"
+                  type="text"
+                  value={location}
+                  onChange={(e) => handleInputChange('location', e.target.value)}
+                  placeholder="City, country, or region"
+                  disabled={displayLoading}
+                  className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 transition-colors"
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <span className="text-gray-400">📍</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="minRepos" className="block text-sm font-medium text-gray-700">
+                Minimum Repositories
+              </label>
+              <div className="relative">
+                <input
+                  id="minRepos"
+                  type="number"
+                  value={minRepos}
+                  onChange={(e) => handleInputChange('minRepos', e.target.value)}
+                  placeholder="e.g., 10"
+                  min="0"
+                  disabled={displayLoading}
+                  className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 transition-colors"
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <span className="text-gray-400">📦</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <label htmlFor="language" className="block text-sm font-medium text-gray-700">
+                Primary Language
+              </label>
+              <div className="relative">
+                <select
+                  id="language"
+                  value={language}
+                  onChange={(e) => handleInputChange('language', e.target.value)}
+                  disabled={displayLoading}
+                  className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 transition-colors appearance-none"
+                >
+                  <option value="">Any language</option>
+                  <option value="JavaScript">JavaScript</option>
+                  <option value="Python">Python</option>
+                  <option value="Java">Java</option>
+                  <option value="TypeScript">TypeScript</option>
+                  <option value="Go">Go</option>
+                  <option value="Ruby">Ruby</option>
+                  <option value="PHP">PHP</option>
+                  <option value="C++">C++</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <span className="text-gray-400">🔧</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Form Actions */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4 border-t border-gray-200">
           <button
             type="button"
             onClick={handleClear}
-            disabled={displayLoading || !username}
-            style={{
-              ...buttonStyle,
-              ...secondaryButtonStyle,
-              ...((displayLoading || !username) ? disabledButtonStyle : {})
-            }}
+            disabled={displayLoading || (!username && !location && !minRepos && !language)}
+            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
           >
-            Clear
+            Clear All
           </button>
           
           <button
             type="submit"
-            disabled={displayLoading || !username.trim()}
-            style={{
-              ...buttonStyle,
-              ...primaryButtonStyle,
-              ...((displayLoading || !username.trim()) ? disabledButtonStyle : {})
-            }}
+            disabled={displayLoading || (searchType === 'user' ? !username.trim() : !username.trim() && !location.trim())}
+            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium shadow-sm hover:shadow-md flex items-center justify-center gap-2"
           >
             {displayLoading ? (
-              <span style={loadingContentStyle}>
+              <>
                 <LoadingSpinner />
                 Searching...
-              </span>
+              </>
             ) : (
-              'Search GitHub'
+              <>
+                <span>🔍</span>
+                {searchType === 'user' ? 'Search User' : 'Advanced Search'}
+              </>
             )}
           </button>
         </div>
@@ -107,88 +279,134 @@ const Search = ({ onSearch, loading = false, userData = null, error = null }) =>
 
       {/* Loading State */}
       {displayLoading && (
-        <div style={loadingContainerStyle}>
-          <LoadingSpinner size="large" />
-          <p style={loadingTextStyle}>Searching for user...</p>
+        <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+          <div className="flex flex-col items-center space-y-4">
+            <LoadingSpinner size="large" />
+            <p className="text-lg text-gray-600">Searching GitHub users...</p>
+            <p className="text-sm text-gray-500">This may take a few moments</p>
+          </div>
         </div>
       )}
 
       {/* Error State */}
       {displayError && !displayLoading && (
-        <div style={errorContainerStyle}>
-          <div style={errorIconStyle}>❌</div>
-          <div>
-            <h3 style={errorTitleStyle}>Search Failed</h3>
-            <p style={errorMessageStyle}>{displayError}</p>
-            <p style={helpTextStyle}>Looks like we cant find the user. Please check the username and try again.</p>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                <span className="text-red-600 text-lg">❌</span>
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-red-800 mb-2">Search Failed</h3>
+              <p className="text-red-700 mb-2">{displayError}</p>
+              <p className="text-red-600 text-sm">Looks like we cant find the user. Please check your search criteria and try again.</p>
+            </div>
           </div>
         </div>
       )}
 
       {/* User Data Display */}
       {displayUserData && !displayLoading && !displayError && (
-        <div style={userCardStyle}>
-          <div style={userHeaderStyle}>
-            <img 
-              src={displayUserData.avatar_url} 
-              alt={displayUserData.login}
-              style={avatarStyle}
-            />
-            <div style={userInfoStyle}>
-              <h2 style={userNameStyle}>
-                {displayUserData.name || displayUserData.login}
-              </h2>
-              <p style={userLoginStyle}>@{displayUserData.login}</p>
-              {displayUserData.bio && (
-                <p style={userBioStyle}>{displayUserData.bio}</p>
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+              <img 
+                src={displayUserData.avatar_url} 
+                alt={displayUserData.login}
+                className="w-20 h-20 rounded-full border-4 border-gray-100"
+              />
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {displayUserData.name || displayUserData.login}
+                </h2>
+                <p className="text-lg text-gray-600 mb-2">@{displayUserData.login}</p>
+                {displayUserData.bio && (
+                  <p className="text-gray-700 leading-relaxed">{displayUserData.bio}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 border-b border-gray-200">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="text-2xl font-bold text-blue-700">{displayUserData.public_repos}</div>
+                <div className="text-sm text-blue-600 font-medium">Repositories</div>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4">
+                <div className="text-2xl font-bold text-green-700">{displayUserData.followers}</div>
+                <div className="text-sm text-green-600 font-medium">Followers</div>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-4">
+                <div className="text-2xl font-bold text-purple-700">{displayUserData.following}</div>
+                <div className="text-sm text-purple-600 font-medium">Following</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              {displayUserData.location && (
+                <div className="flex items-center space-x-3">
+                  <span className="text-gray-400">📍</span>
+                  <span className="text-gray-700">{displayUserData.location}</span>
+                </div>
+              )}
+              {displayUserData.company && (
+                <div className="flex items-center space-x-3">
+                  <span className="text-gray-400">🏢</span>
+                  <span className="text-gray-700">{displayUserData.company}</span>
+                </div>
+              )}
+              {displayUserData.blog && (
+                <div className="flex items-center space-x-3">
+                  <span className="text-gray-400">🌐</span>
+                  <a href={displayUserData.blog} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    {displayUserData.blog}
+                  </a>
+                </div>
+              )}
+              {displayUserData.twitter_username && (
+                <div className="flex items-center space-x-3">
+                  <span className="text-gray-400">🐦</span>
+                  <a 
+                    href={`https://twitter.com/${displayUserData.twitter_username}`}
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-blue-600 hover:underline"
+                  >
+                    @{displayUserData.twitter_username}
+                  </a>
+                </div>
               )}
             </div>
-          </div>
-
-          <div style={userStatsStyle}>
-            <div style={statItemStyle}>
-              <strong>{displayUserData.public_repos}</strong>
-              <span>Repositories</span>
+            
+            <div className="mt-6 text-center">
+              <a 
+                href={displayUserData.html_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+              >
+                <span>View Full Profile on GitHub</span>
+                <span>→</span>
+              </a>
             </div>
-            <div style={statItemStyle}>
-              <strong>{displayUserData.followers}</strong>
-              <span>Followers</span>
-            </div>
-            <div style={statItemStyle}>
-              <strong>{displayUserData.following}</strong>
-              <span>Following</span>
-            </div>
-          </div>
-
-          {displayUserData.location && (
-            <div style={userMetaStyle}>
-              <span>📍 {displayUserData.location}</span>
-            </div>
-          )}
-
-          <div style={profileLinkStyle}>
-            <a 
-              href={displayUserData.html_url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              style={linkStyle}
-            >
-              View Full Profile on GitHub →
-            </a>
           </div>
         </div>
       )}
 
-      {/* Help Text */}
-      <div style={helpSectionStyle}>
-        <p style={helpTitleStyle}>💡 Popular GitHub Users to Search:</p>
-        <div style={exampleUsersStyle}>
-          {['octocat', 'torvalds', 'gaearon', 'defunkt', 'mojombo'].map((user) => (
+      {/* Quick Search Examples */}
+      <div className="bg-gray-50 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">💡 Popular GitHub Users to Search</h3>
+        <div className="flex flex-wrap gap-2">
+          {['octocat', 'torvalds', 'gaearon', 'defunkt', 'mojombo', 'yyx990803'].map((user) => (
             <button
               key={user}
               type="button"
               onClick={() => setUsername(user)}
-              style={exampleUserButtonStyle}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
             >
               {user}
             </button>
@@ -201,290 +419,17 @@ const Search = ({ onSearch, loading = false, userData = null, error = null }) =>
 
 // Loading Spinner Component
 const LoadingSpinner = ({ size = 'medium' }) => {
-  const sizes = {
-    small: '20px',
-    medium: '24px',
-    large: '32px'
+  const sizeClasses = {
+    small: 'w-4 h-4',
+    medium: 'w-6 h-6',
+    large: 'w-8 h-8'
   };
 
   return (
     <div
-      style={{
-        width: sizes[size],
-        height: sizes[size],
-        border: '3px solid #f3f3f3',
-        borderTop: '3px solid #3182ce',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite'
-      }}
+      className={`${sizeClasses[size]} border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin`}
     />
   );
 };
-
-// Styles
-const containerStyle = {
-  maxWidth: '600px',
-  margin: '0 auto',
-  padding: '2rem',
-};
-
-const formStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1.5rem',
-  marginBottom: '2rem',
-};
-
-const inputGroupStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.5rem',
-};
-
-const labelStyle = {
-  fontWeight: '600',
-  fontSize: '0.9rem',
-  color: '#2d3748',
-};
-
-const inputContainerStyle = {
-  position: 'relative',
-};
-
-const inputStyle = {
-  width: '100%',
-  padding: '0.75rem 3rem 0.75rem 1rem',
-  border: '2px solid #e2e8f0',
-  borderRadius: '8px',
-  fontSize: '1rem',
-  transition: 'all 0.2s ease',
-  outline: 'none',
-};
-
-const disabledInputStyle = {
-  backgroundColor: '#f7fafc',
-  cursor: 'not-allowed',
-  opacity: 0.7,
-};
-
-const searchIconStyle = {
-  position: 'absolute',
-  right: '1rem',
-  top: '50%',
-  transform: 'translateY(-50%)',
-  fontSize: '1.2rem',
-  pointerEvents: 'none',
-};
-
-const buttonGroupStyle = {
-  display: 'flex',
-  gap: '1rem',
-  justifyContent: 'flex-end',
-};
-
-const buttonStyle = {
-  padding: '0.75rem 1.5rem',
-  border: 'none',
-  borderRadius: '6px',
-  fontSize: '0.9rem',
-  fontWeight: '600',
-  cursor: 'pointer',
-  transition: 'all 0.2s ease',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-};
-
-const primaryButtonStyle = {
-  backgroundColor: '#3182ce',
-  color: 'white',
-};
-
-const secondaryButtonStyle = {
-  backgroundColor: '#e2e8f0',
-  color: '#4a5568',
-};
-
-const disabledButtonStyle = {
-  opacity: 0.5,
-  cursor: 'not-allowed',
-};
-
-const loadingContentStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-};
-
-const loadingContainerStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '1rem',
-  padding: '3rem',
-  backgroundColor: '#f7fafc',
-  borderRadius: '12px',
-  border: '2px dashed #e2e8f0',
-};
-
-const loadingTextStyle = {
-  color: '#4a5568',
-  fontSize: '1.1rem',
-  margin: 0,
-};
-
-const errorContainerStyle = {
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: '1rem',
-  padding: '2rem',
-  backgroundColor: '#fed7d7',
-  border: '1px solid #feb2b2',
-  borderRadius: '12px',
-  marginBottom: '2rem',
-};
-
-const errorIconStyle = {
-  fontSize: '2rem',
-  flexShrink: 0,
-};
-
-const errorTitleStyle = {
-  color: '#c53030',
-  margin: '0 0 0.5rem 0',
-  fontSize: '1.2rem',
-};
-
-const errorMessageStyle = {
-  color: '#742a2a',
-  margin: '0 0 0.5rem 0',
-  fontWeight: '500',
-};
-
-const helpTextStyle = {
-  color: '#742a2a',
-  margin: 0,
-  fontSize: '0.9rem',
-  opacity: 0.8,
-};
-
-const userCardStyle = {
-  backgroundColor: 'white',
-  borderRadius: '12px',
-  padding: '2rem',
-  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-  border: '1px solid #e2e8f0',
-  marginBottom: '2rem',
-};
-
-const userHeaderStyle = {
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: '1.5rem',
-  marginBottom: '1.5rem',
-};
-
-const avatarStyle = {
-  width: '80px',
-  height: '80px',
-  borderRadius: '50%',
-  border: '3px solid #e2e8f0',
-};
-
-const userInfoStyle = {
-  flex: 1,
-};
-
-const userNameStyle = {
-  margin: '0 0 0.25rem 0',
-  color: '#2d3748',
-  fontSize: '1.5rem',
-};
-
-const userLoginStyle = {
-  margin: '0 0 0.5rem 0',
-  color: '#718096',
-  fontSize: '1.1rem',
-};
-
-const userBioStyle = {
-  margin: '0.5rem 0 0 0',
-  color: '#4a5568',
-  lineHeight: '1.5',
-};
-
-const userStatsStyle = {
-  display: 'flex',
-  gap: '2rem',
-  marginBottom: '1rem',
-  padding: '1rem 0',
-  borderTop: '1px solid #e2e8f0',
-  borderBottom: '1px solid #e2e8f0',
-};
-
-const statItemStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '0.25rem',
-};
-
-const userMetaStyle = {
-  marginBottom: '1rem',
-  color: '#4a5568',
-};
-
-const profileLinkStyle = {
-  textAlign: 'center',
-};
-
-const linkStyle = {
-  color: '#3182ce',
-  textDecoration: 'none',
-  fontWeight: '600',
-};
-
-const helpSectionStyle = {
-  padding: '1.5rem',
-  backgroundColor: '#f7fafc',
-  borderRadius: '8px',
-  border: '1px solid #e2e8f0',
-};
-
-const helpTitleStyle = {
-  margin: '0 0 1rem 0',
-  color: '#2d3748',
-  fontSize: '0.9rem',
-  fontWeight: '600',
-};
-
-const exampleUsersStyle = {
-  display: 'flex',
-  gap: '0.5rem',
-  flexWrap: 'wrap',
-};
-
-const exampleUserButtonStyle = {
-  padding: '0.5rem 1rem',
-  backgroundColor: 'white',
-  border: '1px solid #cbd5e0',
-  borderRadius: '4px',
-  fontSize: '0.8rem',
-  cursor: 'pointer',
-  transition: 'all 0.2s ease',
-};
-
-// Add CSS animation
-const styles = `
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-`;
-
-// Inject styles
-const styleSheet = document.createElement('style');
-styleSheet.innerText = styles;
-document.head.appendChild(styleSheet);
 
 export default Search;
