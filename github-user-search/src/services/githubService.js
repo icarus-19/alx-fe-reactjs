@@ -13,7 +13,6 @@ const githubApi = axios.create({
 // Request interceptor
 githubApi.interceptors.request.use(
   (config) => {
-    // Add authentication token if available (optional, increases rate limit)
     const token = process.env.REACT_APP_GITHUB_TOKEN;
     if (token) {
       config.headers.Authorization = `token ${token}`;
@@ -89,7 +88,7 @@ export const githubService = {
   },
 
   /**
-   * Search GitHub users with advanced criteria
+   * Search GitHub users with advanced criteria using the search endpoint
    * @param {Object} criteria - Search criteria
    * @param {string} criteria.username - Username to search for
    * @param {string} criteria.location - Location filter
@@ -101,12 +100,12 @@ export const githubService = {
     try {
       const { username, location, minRepos, language } = criteria;
       
-      // Build search query
+      // Build search query using GitHub search syntax
       let query = '';
       const queryParts = [];
       
       if (username) {
-        queryParts.push(`${username} in:login`);
+        queryParts.push(`user:${username}`);
       }
       if (location) {
         queryParts.push(`location:${location}`);
@@ -127,9 +126,9 @@ export const githubService = {
       
       console.log(`🔍 Searching GitHub users with query: ${query}`);
       
-      const response = await githubApi.get('https://api.github.com/search/users', {
+      // Use the exact search endpoint with query parameter
+      const response = await githubApi.get(`https://api.github.com/search/users?q=${encodeURIComponent(query)}`, {
         params: {
-          q: query,
           per_page: 10,
           sort: 'followers',
           order: 'desc'
@@ -164,6 +163,58 @@ export const githubService = {
   },
 
   /**
+   * Alternative search method using params object instead of URL string
+   * @param {Object} criteria - Search criteria
+   * @returns {Promise} Search results
+   */
+  searchUsersWithParams: async (criteria = {}) => {
+    try {
+      const { username, location, minRepos, language } = criteria;
+      
+      // Build search query
+      let query = '';
+      const queryParts = [];
+      
+      if (username) {
+        queryParts.push(`user:${username}`);
+      }
+      if (location) {
+        queryParts.push(`location:${location}`);
+      }
+      if (minRepos) {
+        queryParts.push(`repos:>=${minRepos}`);
+      }
+      if (language) {
+        queryParts.push(`language:${language}`);
+      }
+      
+      if (queryParts.length === 0) {
+        query = 'followers:>0';
+      } else {
+        query = queryParts.join(' ');
+      }
+      
+      console.log(`🔍 Searching GitHub users with query: ${query}`);
+      
+      // Alternative method using params object
+      const response = await githubApi.get('/search/users', {
+        params: {
+          q: query,
+          per_page: 10,
+          sort: 'followers',
+          order: 'desc'
+        }
+      });
+      
+      console.log(`✅ Found ${response.data.items.length} users`);
+      return response.data;
+      
+    } catch (error) {
+      throw new Error(`Search failed: ${error.message}`);
+    }
+  },
+
+  /**
    * Advanced search with multiple users and filtering
    * @param {Object} criteria - Search criteria
    * @returns {Promise} Filtered user data
@@ -184,14 +235,14 @@ export const githubService = {
             avatar_url: userData.avatar_url,
             url: userData.url,
             html_url: userData.html_url,
-            repos: userData.public_repos,
+            public_repos: userData.public_repos,
             location: userData.location,
             matches_criteria: true
           }]
         };
       }
       
-      // Otherwise, use the search API
+      // Otherwise, use the search API with the exact endpoint
       const searchResults = await githubService.searchUsers(criteria);
       
       // Enhance results with additional user data
@@ -264,36 +315,6 @@ export const githubService = {
     } catch (error) {
       throw new Error(`Failed to fetch followers: ${error.response?.data?.message || error.message}`);
     }
-  },
-
-  /**
-   * Get complete user profile with additional data
-   * @param {string} username - GitHub username
-   * @returns {Promise} Complete user profile
-   */
-  fetchCompleteUserProfile: async (username) => {
-    try {
-      const [userData, repos, followers] = await Promise.all([
-        githubService.fetchUserData(username),
-        githubService.fetchUserRepos(username),
-        githubService.fetchUserFollowers(username)
-      ]);
-
-      return {
-        profile: userData,
-        repositories: repos,
-        followers: followers,
-        summary: {
-          publicRepos: userData.public_repos,
-          publicGists: userData.public_gists,
-          followers: userData.followers,
-          following: userData.following,
-          accountAge: new Date(userData.created_at).toLocaleDateString()
-        }
-      };
-    } catch (error) {
-      throw new Error(`Failed to fetch complete profile: ${error.message}`);
-    }
   }
 };
 
@@ -308,12 +329,22 @@ export const githubUtils = {
     const { username, location, minRepos, language } = criteria;
     const queryParts = [];
     
-    if (username) queryParts.push(`${username} in:login`);
+    if (username) queryParts.push(`user:${username}`);
     if (location) queryParts.push(`location:"${location}"`);
     if (minRepos) queryParts.push(`repos:>=${minRepos}`);
     if (language) queryParts.push(`language:${language}`);
     
     return queryParts.length > 0 ? queryParts.join(' ') : 'followers:>0';
+  },
+
+  /**
+   * Generate the exact search URL for testing
+   * @param {Object} criteria - Search criteria
+   * @returns {string} Complete search URL
+   */
+  generateSearchUrl: (criteria = {}) => {
+    const query = githubUtils.buildSearchQuery(criteria);
+    return `https://api.github.com/search/users?q=${encodeURIComponent(query)}&per_page=10&sort=followers&order=desc`;
   },
 
   /**
@@ -340,35 +371,6 @@ export const githubUtils = {
     return {
       isValid: errors.length === 0,
       errors
-    };
-  },
-
-  /**
-   * Format user data for display
-   * @param {Object} userData - Raw user data from GitHub API
-   * @returns {Object} Formatted user data
-   */
-  formatUserData: (userData) => {
-    return {
-      username: userData.login,
-      name: userData.name || userData.login,
-      avatar: userData.avatar_url,
-      bio: userData.bio || 'No bio available',
-      location: userData.location || 'Not specified',
-      company: userData.company || 'Not specified',
-      blog: userData.blog || null,
-      twitter: userData.twitter_username || null,
-      email: userData.email || null,
-      stats: {
-        publicRepos: userData.public_repos,
-        publicGists: userData.public_gists,
-        followers: userData.followers,
-        following: userData.following
-      },
-      dates: {
-        joined: new Date(userData.created_at).toLocaleDateString(),
-        updated: new Date(userData.updated_at).toLocaleDateString()
-      }
     };
   },
 
