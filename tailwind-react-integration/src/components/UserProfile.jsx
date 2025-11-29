@@ -10,7 +10,7 @@ const UserProfile = ({ user = {} }) => {
 
   return (
     <div className="max-w-sm mx-auto my-20 rounded-lg shadow-lg bg-white">
-      <div className="bg-gray-100 sm:p-4 p-8 rounded-t-lg">
+      <div className="bg-gray-100 sm:p-4 md:p-8 rounded-t-lg">
         <div className="text-center">
           <img 
             className="w-36 h-36 rounded-full mx-auto border-4 border-white shadow-md"
@@ -20,7 +20,7 @@ const UserProfile = ({ user = {} }) => {
         </div>
       </div>
       
-      <div className="sm:p-4 p-8">
+      <div className="sm:p-4 md:p-8">
         <h2 className="text-xl font-bold text-blue-800 text-center mb-2">{name}</h2>
         <p className="text-base text-gray-600 text-center my-4">{email}</p>
         <p className="text-base text-gray-500 text-center mb-6">{bio}</p>
