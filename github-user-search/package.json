@@ -31,7 +31,12 @@
   },
   "overrides": {
     "vite": "npm:rolldown-vite@7.2.5"
+  },
+  "scripts": {
+    "build": "react-scripts build",
+    "dev": "react-scripts start"
   }
+
 
   
 }
