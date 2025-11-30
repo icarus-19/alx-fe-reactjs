@@ -21,29 +21,29 @@ const UserProfile = ({ user = {} }) => {
       </div>
       
       <div className="sm:p-4 md:p-8">
-        <h2 className="text-xl font-bold text-blue-800 text-center mb-2">{name}</h2>
-        <p className="text-base text-gray-600 text-center my-4">{email}</p>
-        <p className="text-base text-gray-500 text-center mb-6">{bio}</p>
+        <h2 className="text-lg md:text-xl font-bold text-blue-800 text-center mb-2">{name}</h2>
+        <p className="text-sm text-gray-600 text-center my-4">{email}</p>
+        <p className="text-sm text-gray-500 text-center mb-6">{bio}</p>
         
         <div className="flex justify-between space-x-4">
-          <button className="text-base flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+          <button className="text-sm flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
             Message
           </button>
-          <button className="text-base flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition duration-200">
+          <button className="text-sm flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition duration-200">
             Follow
           </button>
         </div>
         
         <div className="mt-6 pt-6 border-t border-gray-200">
-          <div className="flex justify-between text-base text-gray-500">
+          <div className="flex justify-between text-sm text-gray-500">
             <span>Posts</span>
             <span className="font-medium text-gray-700">142</span>
           </div>
-          <div className="flex justify-between text-base text-gray-500 mt-2">
+          <div className="flex justify-between text-sm text-gray-500 mt-2">
             <span>Following</span>
             <span className="font-medium text-gray-700">356</span>
           </div>
-          <div className="flex justify-between text-base text-gray-500 mt-2">
+          <div className="flex justify-between text-sm text-gray-500 mt-2">
             <span>Followers</span>
             <span className="font-medium text-gray-700">1.2K</span>
           </div>
