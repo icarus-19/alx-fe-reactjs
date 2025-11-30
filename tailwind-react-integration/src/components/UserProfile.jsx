@@ -13,7 +13,7 @@ const UserProfile = ({ user = {} }) => {
       <div className="bg-gray-100 sm:p-4 md:p-8 rounded-t-lg">
         <div className="text-center">
           <img 
-            className="w-36 h-36 rounded-full mx-auto border-4 border-white shadow-md"
+            className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 rounded-full mx-auto border-4 border-white shadow-md"
             src={avatar} 
             alt={`${name}'s avatar`}
           />
