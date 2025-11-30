@@ -21,7 +21,7 @@ const UserProfile = ({ user = {} }) => {
       </div>
       
       <div className="sm:p-4 md:p-8">
-        <h2 className="text-lg md:text-xl font-bold text-blue-800 text-center mb-2">{name}</h2>
+        <h2 className="text-lg md:text-xl font-bold text-blue-800 text-center mb-2 hover:text-blue-500 transition-colors duration-300">{name}</h2>
         <p className="text-sm text-gray-600 text-center my-4">{email}</p>
         <p className="text-sm text-gray-500 text-center mb-6">{bio}</p>
         
@@ -35,15 +35,15 @@ const UserProfile = ({ user = {} }) => {
         </div>
         
         <div className="mt-6 pt-6 border-t border-gray-200">
-          <div className="flex justify-between text-sm text-gray-500">
+          <div className="flex justify-between text-sm text-gray-500 hover:text-blue-500 transition-colors duration-300">
             <span>Posts</span>
             <span className="font-medium text-gray-700">142</span>
           </div>
-          <div className="flex justify-between text-sm text-gray-500 mt-2">
+          <div className="flex justify-between text-sm text-gray-500 mt-2 hover:text-blue-500 transition-colors duration-300">
             <span>Following</span>
             <span className="font-medium text-gray-700">356</span>
           </div>
-          <div className="flex justify-between text-sm text-gray-500 mt-2">
+          <div className="flex justify-between text-sm text-gray-500 mt-2 hover:text-blue-500 transition-colors duration-300">
             <span>Followers</span>
             <span className="font-medium text-gray-700">1.2K</span>
           </div>
