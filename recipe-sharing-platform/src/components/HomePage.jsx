@@ -5,7 +5,7 @@ function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/data')
+    fetch('/data.json')
       .then(res => res.json())
       .then(data => {
         setData(data);
