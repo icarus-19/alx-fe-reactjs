@@ -20,9 +20,11 @@ function AddRecipeForm() {
   // State for validation errors
   const [errors, setErrors] = useState({});
 
-  // Handle input changes
+  // Handle input changes - UPDATED to show e.target.value
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const name = e.target.name;
+    const value = e.target.value; // ✅ Explicitly showing e.target.value
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -35,6 +37,15 @@ function AddRecipeForm() {
         [name]: ''
       }));
     }
+  };
+
+  // Alternative handleChange with explicit destructuring
+  const handleChangeAlternative = (e) => {
+    const { name, value } = e.target; // ✅ Destructuring e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   // Validate form
@@ -90,18 +101,14 @@ function AddRecipeForm() {
         ...formData,
         ingredients: ingredientsArray,
         instructions: instructionsArray,
-        id: Date.now(), // Generate unique ID
+        id: Date.now(),
         createdAt: new Date().toISOString()
       };
       
-      // Here you would typically send data to an API
       console.log('Recipe data to submit:', recipeData);
       
-      // For now, simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Show success message
-      alert('Recipe added successfully!');
+      // For demo purposes, show what we captured
+      alert(`Recipe "${formData.title}" added successfully!\n\nIngredients captured: ${ingredientsArray.length}\nSteps captured: ${instructionsArray.length}`);
       
       // Reset form
       setFormData({
@@ -116,7 +123,7 @@ function AddRecipeForm() {
         image: ''
       });
       
-      // Navigate to home or recipes page
+      // Navigate to home page
       navigate('/');
       
     } catch (error) {
@@ -280,7 +287,10 @@ function AddRecipeForm() {
                 <select
                   name="servings"
                   value={formData.servings}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    const value = e.target.value; // ✅ Explicit e.target.value
+                    setFormData(prev => ({ ...prev, servings: value }));
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {[1, 2, 3, 4, 5, 6, 8, 10, 12].map(num => (
@@ -303,7 +313,10 @@ function AddRecipeForm() {
                       name="difficulty"
                       value={level}
                       checked={formData.difficulty === level}
-                      onChange={handleChange}
+                      onChange={(e) => {
+                        const value = e.target.value; // ✅ Explicit e.target.value
+                        setFormData(prev => ({ ...prev, difficulty: value }));
+                      }}
                       className="mr-2"
                     />
                     <span className="text-gray-700">{level}</span>
@@ -416,18 +429,21 @@ function AddRecipeForm() {
           </form>
         </div>
 
-        {/* Tips Section */}
-        <div className="mt-8 bg-blue-50 rounded-xl p-6">
-          <h3 className="text-xl font-semibold text-blue-800 mb-3">
-            💡 Tips for a Great Recipe Submission
+        {/* Demo Section showing e.target.value */}
+        <div className="mt-8 bg-yellow-50 rounded-xl p-6">
+          <h3 className="text-xl font-semibold text-yellow-800 mb-3">
+            🎯 How e.target.value works
           </h3>
-          <ul className="text-blue-700 space-y-2">
-            <li>• Be specific with measurements (use cups, grams, tablespoons)</li>
-            <li>• List ingredients in the order they're used</li>
-            <li>• Break down steps into clear, simple instructions</li>
-            <li>• Include cooking times and temperatures</li>
-            <li>• Add tips or variations if you have them</li>
-          </ul>
+          <p className="text-yellow-700 mb-2">
+            When you type in the title field, <code className="bg-yellow-100 px-2 py-1 rounded">e.target.value</code> captures what you type:
+          </p>
+          <div className="bg-white p-4 rounded-lg border border-yellow-200">
+            <p className="text-sm text-gray-600 mb-1">Current title value:</p>
+            <p className="font-mono text-lg">{formData.title || '(empty)'}</p>
+          </div>
+          <p className="text-yellow-700 mt-4 text-sm">
+            The <code>handleChange</code> function extracts <code>e.target.value</code> and updates the form state.
+          </p>
         </div>
       </div>
     </div>
