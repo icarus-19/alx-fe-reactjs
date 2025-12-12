@@ -1,7 +1,7 @@
 import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import './formikForm.css'; // Optional styling
+import './formikForm.css';
 
 const FormikForm = () => {
   // Define initial values
@@ -15,7 +15,7 @@ const FormikForm = () => {
     terms: false
   };
 
-  // Define validation schema using Yup
+  // Define validation schema using Yup with string().required() for each field
   const validationSchema = Yup.object({
     username: Yup.string()
       .min(3, 'Username must be at least 3 characters')
@@ -44,6 +44,7 @@ const FormikForm = () => {
     
     terms: Yup.boolean()
       .oneOf([true], 'You must accept the terms and conditions')
+      .required('You must accept the terms and conditions')
   });
 
   // Handle form submission
@@ -177,13 +178,6 @@ const FormikForm = () => {
               <button type="reset" className="reset-btn">
                 Reset
               </button>
-            </div>
-
-            {/* Debug Info (optional) */}
-            <div className="debug-info">
-              <h4>Form Status:</h4>
-              <p>Is Submitting: {isSubmitting ? 'Yes' : 'No'}</p>
-              <p>Validation Errors: {Object.keys(errors).length}</p>
             </div>
           </Form>
         )}
