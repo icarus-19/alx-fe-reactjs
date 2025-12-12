@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './RegistrationForm.css'; // Optional styling file
 
 const RegistrationForm = () => {
-  // State for individual form fields (as requested)
+  // State for individual form fields
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,70 +18,52 @@ const RegistrationForm = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Handle input changes
-  const handleUsernameChange = (e) => {
-    const value = e.target.value;
-    setUsername(value);
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
     
-    // Clear error when user starts typing
-    if (errors.username) {
-      setErrors({
-        ...errors,
-        username: ''
-      });
+    switch (name) {
+      case 'username':
+        setUsername(value);
+        if (errors.username) setErrors({...errors, username: ''});
+        break;
+      case 'email':
+        setEmail(value);
+        if (errors.email) setErrors({...errors, email: ''});
+        break;
+      case 'password':
+        setPassword(value);
+        if (errors.password) setErrors({...errors, password: ''});
+        break;
+      default:
+        break;
     }
   };
 
-  const handleEmailChange = (e) => {
-    const value = e.target.value;
-    setEmail(value);
-    
-    // Clear error when user starts typing
-    if (errors.email) {
-      setErrors({
-        ...errors,
-        email: ''
-      });
-    }
-  };
-
-  const handlePasswordChange = (e) => {
-    const value = e.target.value;
-    setPassword(value);
-    
-    // Clear error when user starts typing
-    if (errors.password) {
-      setErrors({
-        ...errors,
-        password: ''
-      });
-    }
-  };
-
-  // Validation function
+  // Validation function with EXACT requested patterns
   const validateForm = () => {
     const newErrors = {};
     let isValid = true;
 
-    // Check if fields are empty
-    if (!username.trim()) {
+    // Check if fields are empty - using EXACT requested patterns
+    if (!username) {
       newErrors.username = 'Username is required';
       isValid = false;
     }
 
-    if (!email.trim()) {
+    if (!email) {
       newErrors.email = 'Email is required';
       isValid = false;
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      // Basic email format validation (optional)
+      // Optional email format validation
       newErrors.email = 'Email is invalid';
       isValid = false;
     }
 
-    if (!password.trim()) {
+    if (!password) {
       newErrors.password = 'Password is required';
       isValid = false;
     } else if (password.length < 6) {
-      // Additional password validation (optional)
+      // Optional password length validation
       newErrors.password = 'Password must be at least 6 characters';
       isValid = false;
     }
@@ -96,16 +78,7 @@ const RegistrationForm = () => {
     
     if (validateForm()) {
       // Form is valid, proceed with submission
-      const formData = {
-        username,
-        email,
-        password
-      };
-      
-      console.log('Form submitted successfully:', formData);
-      
-      // In a real application, you would send data to an API here
-      // Example: await api.register(formData);
+      console.log('Form submitted successfully:', { username, email, password });
       
       // Reset form
       setUsername('');
@@ -158,8 +131,8 @@ const RegistrationForm = () => {
             type="text"
             id="username"
             name="username"
-            value={username}  // Required value attribute
-            onChange={handleUsernameChange}
+            value={username}
+            onChange={handleInputChange}
             className={errors.username ? 'error' : ''}
             placeholder="Enter your username"
           />
@@ -175,8 +148,8 @@ const RegistrationForm = () => {
             type="email"
             id="email"
             name="email"
-            value={email}  // Required value attribute
-            onChange={handleEmailChange}
+            value={email}
+            onChange={handleInputChange}
             className={errors.email ? 'error' : ''}
             placeholder="Enter your email"
           />
@@ -192,8 +165,8 @@ const RegistrationForm = () => {
             type="password"
             id="password"
             name="password"
-            value={password}  // Required value attribute
-            onChange={handlePasswordChange}
+            value={password}
+            onChange={handleInputChange}
             className={errors.password ? 'error' : ''}
             placeholder="Enter your password"
           />
