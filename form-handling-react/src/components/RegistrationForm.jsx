@@ -2,12 +2,10 @@ import React, { useState } from 'react';
 import './RegistrationForm.css'; // Optional styling file
 
 const RegistrationForm = () => {
-  // State for form fields
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: ''
-  });
+  // State for individual form fields (as requested)
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   // State for validation errors
   const [errors, setErrors] = useState({
@@ -20,18 +18,41 @@ const RegistrationForm = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Handle input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+  const handleUsernameChange = (e) => {
+    const value = e.target.value;
+    setUsername(value);
     
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
+    // Clear error when user starts typing
+    if (errors.username) {
       setErrors({
         ...errors,
-        [name]: ''
+        username: ''
+      });
+    }
+  };
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    
+    // Clear error when user starts typing
+    if (errors.email) {
+      setErrors({
+        ...errors,
+        email: ''
+      });
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    setPassword(value);
+    
+    // Clear error when user starts typing
+    if (errors.password) {
+      setErrors({
+        ...errors,
+        password: ''
       });
     }
   };
@@ -42,24 +63,24 @@ const RegistrationForm = () => {
     let isValid = true;
 
     // Check if fields are empty
-    if (!formData.username.trim()) {
+    if (!username.trim()) {
       newErrors.username = 'Username is required';
       isValid = false;
     }
 
-    if (!formData.email.trim()) {
+    if (!email.trim()) {
       newErrors.email = 'Email is required';
       isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
       // Basic email format validation (optional)
       newErrors.email = 'Email is invalid';
       isValid = false;
     }
 
-    if (!formData.password.trim()) {
+    if (!password.trim()) {
       newErrors.password = 'Password is required';
       isValid = false;
-    } else if (formData.password.length < 6) {
+    } else if (password.length < 6) {
       // Additional password validation (optional)
       newErrors.password = 'Password must be at least 6 characters';
       isValid = false;
@@ -75,17 +96,21 @@ const RegistrationForm = () => {
     
     if (validateForm()) {
       // Form is valid, proceed with submission
+      const formData = {
+        username,
+        email,
+        password
+      };
+      
       console.log('Form submitted successfully:', formData);
       
       // In a real application, you would send data to an API here
       // Example: await api.register(formData);
       
       // Reset form
-      setFormData({
-        username: '',
-        email: '',
-        password: ''
-      });
+      setUsername('');
+      setEmail('');
+      setPassword('');
       setErrors({
         username: '',
         email: '',
@@ -104,11 +129,9 @@ const RegistrationForm = () => {
 
   // Handle form reset
   const handleReset = () => {
-    setFormData({
-      username: '',
-      email: '',
-      password: ''
-    });
+    setUsername('');
+    setEmail('');
+    setPassword('');
     setErrors({
       username: '',
       email: '',
@@ -135,8 +158,8 @@ const RegistrationForm = () => {
             type="text"
             id="username"
             name="username"
-            value={formData.username}
-            onChange={handleInputChange}
+            value={username}  // Required value attribute
+            onChange={handleUsernameChange}
             className={errors.username ? 'error' : ''}
             placeholder="Enter your username"
           />
@@ -152,8 +175,8 @@ const RegistrationForm = () => {
             type="email"
             id="email"
             name="email"
-            value={formData.email}
-            onChange={handleInputChange}
+            value={email}  // Required value attribute
+            onChange={handleEmailChange}
             className={errors.email ? 'error' : ''}
             placeholder="Enter your email"
           />
@@ -169,8 +192,8 @@ const RegistrationForm = () => {
             type="password"
             id="password"
             name="password"
-            value={formData.password}
-            onChange={handleInputChange}
+            value={password}  // Required value attribute
+            onChange={handlePasswordChange}
             className={errors.password ? 'error' : ''}
             placeholder="Enter your password"
           />
@@ -193,7 +216,11 @@ const RegistrationForm = () => {
       {/* Display form data for debugging (optional) */}
       <div className="form-data-preview">
         <h4>Current Form Data:</h4>
-        <pre>{JSON.stringify(formData, null, 2)}</pre>
+        <p>
+          <strong>Username:</strong> {username || '(empty)'}<br />
+          <strong>Email:</strong> {email || '(empty)'}<br />
+          <strong>Password:</strong> {password ? '••••••' : '(empty)'}
+        </p>
       </div>
     </div>
   );
